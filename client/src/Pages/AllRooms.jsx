@@ -1,49 +1,135 @@
-import React, { useState } from "react";
+import React, { useMemo, useState } from "react";
 import { assets, facilityIcons, roomsDummyData } from "../assets/assets";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useSearchParams } from "react-router-dom";
 import StarRating from "../Components/StarRating";
+import { useAppContext } from "../context/AppContext";
 
 const CheckBox = ({ label, selected = false, onChange = () => {} }) => {
   return (
     <label className="flex items-center gap-3 mt-2 text-sm cursor-pointer">
-        <input type="checkbox" checked={selected} onChange={(e)=> onChange(e.target.checked, label)}/>
-        <span className="font-light select-none">{label}</span>
+      <input
+        type="checkbox"
+        checked={selected}
+        onChange={(e) => onChange(e.target.checked, label)}
+      />
+      <span className="font-light select-none">{label}</span>
     </label>
-  )
-}
+  );
+};
 
 const RadioButton = ({ label, selected = false, onChange = () => {} }) => {
   return (
     <label className="flex items-center gap-3 mt-2 text-sm cursor-pointer">
-        <input type="radio" checked={selected} onChange={()=> onChange(label)}/>
-        <span className="font-light select-none">{label}</span>
+      <input type="radio" checked={selected} onChange={() => onChange(label)} />
+      <span className="font-light select-none">{label}</span>
     </label>
-  )
-}
+  );
+};
 
 const AllRooms = () => {
-  const navigate = useNavigate();
+  const [searchParams, serSearchParams] = useSearchParams();
+  const { rooms, navigate, currency } = useAppContext();
   const [openFilters, setOpenFilters] = useState(false);
+  const [selectedFilters, setSelectedFilters] = useState({
+    roomType: [],
+    priceRange: [],
+  });
+  const [selectedSort, setSelectedSort] = useState("");
 
-  const roomTypes = [
-    "Single Bed",
-    "Double Bed",
-    "Luxury Room",
-    "Family Suite",
-  ];
+  const roomTypes = ["Single Bed", "Double Bed", "Luxury Room", "Family Suite"];
 
   const priceRanges = [
-    '0 to 500',
-    '500 to 1000',
-    '1000 to 1500',   
-    '1500 to 2000',
+    "0 to 500",
+    "500 to 1000",
+    "1000 to 1500",
+    "1500 to 2000",
   ];
-  
+
   const sortOptions = [
     "Price: Low to High",
     "Price: High to Low",
     "Newest First",
-  ]; 
+  ];
+
+  //Handle changes for filters and sorting
+  const handleFilterChange = (checked, value, type) => {
+    setSelectedFilters((prevFilters) => {
+      const updatedFilters = { ...prevFilters };
+      if (checked) {
+        updatedFilters[type].push(value);
+      } else {
+        updatedFilters[type] = updatedFilters[type].filter(
+          (item) => item !== value
+        );
+      }
+      return updatedFilters;
+    });
+  };
+
+  const handleSortChange = (sortOption) => {
+    setSelectedSort(sortOption);
+  };
+
+  //Function to check if rooms matches the selected room type
+  const matchesRoomType = (room) => {
+    return (
+      selectedFilters.roomType.length === 0 ||
+      selectedFilters.roomType.includes(room.roomType)
+    );
+  };
+
+  // Function to check if room matches selected price ranges
+  const matchesPriceRange = (room) => {
+    return (
+      selectedFilters.priceRange.length === 0 ||
+      selectedFilters.priceRange.some((range) => {
+        const [min, max] = range.split(" to ").map(Number);
+        return room.pricePerNight >= min && room.pricePerNight <= max;
+      })
+    );
+  };
+
+  // Function to sort rooms based on selected sort options
+  const sortRooms = (a, b) => {
+    if (selectedSort === "Price: Low to High") {
+      return a.pricePerNight - b.pricePerNight;
+    }
+    if (selectedSort === "Price: High to Low") {
+      return b.pricePerNight - a.pricePerNight;
+    }
+    if (selectedSort === "Newest First") {
+      return new Date(b.createdAt) - new Date(a.createdAt);
+    }
+    return 0;
+  };
+
+  // Filter Destination
+  const filterDestination = (room) => {
+    const destination = searchParams.get("destination");
+    if (!destination) return true;
+    return room.hotel.city.toLowerCase().includes(destination.toLowerCase());
+  };
+
+  // Filter and sort rooms based on selected filter and sort options
+  const filteredRooms = useMemo(() => {
+    return rooms
+      .filter(
+        (room) =>
+          matchesRoomType(room) &&
+          matchesPriceRange(room) &&
+          filterDestination(room)
+      )
+      .sort(sortRooms);
+  }, [rooms, selectedFilters, selectedSort, searchParams]);
+
+  // CLear All Filters
+  const clearFilters = () => {
+    setSelectedFilters({
+      roomType: [],
+      priceRange: [],
+    });
+    setSelectedSort(""), serSearchParams({});
+  };
 
   return (
     <div className="flex flex-col-reverse lg:flex-row justify-between items-start pt-28 md:pt-35 px-4 md:px-16 lg:px-24 xl:px-32">
@@ -56,7 +142,7 @@ const AllRooms = () => {
           </p>
         </div>
 
-        {roomsDummyData.map((room) => (
+        {filteredRooms.map((room) => (
           <div
             key={room._id}
             className="flex flex-col md:flex-row items-start py-10 gap-6 border-b border-gray-300 last:pb-30 last:border-0"
@@ -108,7 +194,7 @@ const AllRooms = () => {
               </div>
               {/*Room Prices per night*/}
               <p className="text-xl font-medium text-gray-700">
-                ${room.pricePerNight} /Night
+                {currency} {room.pricePerNight} /Night
               </p>
             </div>
           </div>
@@ -131,27 +217,49 @@ const AllRooms = () => {
           </div>
         </div>
 
-        <div className={`${openFilters ? "h-auto" : "h-0 lg:h-auto"} overflow-hidden transition-all duration-700`}>
-            <div className="px-5 pt-5">
-                <p className="font-medium text-gray-800 pb-2">Popular Filters</p>
-                {roomTypes.map((room, index) => (
-                  <CheckBox key={index} label={room} />
-                ))}
-            </div>
-            <div className="px-5 pt-5">
-                <p className="font-medium text-gray-800 pb-2">Price Ranges</p>
-                {priceRanges.map((range, index) => (
-                  <CheckBox key={index} label={`$ ${range}`} />
-                ))}
-            </div>
-            <div className="px-5 pt-5 pb-7">
-                <p className="font-medium text-gray-800 pb-2">Sort Options</p>
-                {sortOptions.map((option, index) => (
-                  <RadioButton key={index} label={option} />
-                ))}
-            </div>
+        <div
+          className={`${
+            openFilters ? "h-auto" : "h-0 lg:h-auto"
+          } overflow-hidden transition-all duration-700`}
+        >
+          <div className="px-5 pt-5">
+            <p className="font-medium text-gray-800 pb-2">Popular Filters</p>
+            {roomTypes.map((room, index) => (
+              <CheckBox
+                key={index}
+                label={room}
+                selected={selectedFilters.roomType.includes(room)}
+                onChange={(checked) =>
+                  handleFilterChange(checked, room, "roomType")
+                }
+              />
+            ))}
+          </div>
+          <div className="px-5 pt-5">
+            <p className="font-medium text-gray-800 pb-2">Price Ranges</p>
+            {priceRanges.map((range, index) => (
+              <CheckBox
+                key={index}
+                label={`${currency} ${range}`}
+                selected={selectedFilters.priceRange.includes(range)}
+                onChange={(checked) =>
+                  handleFilterChange(checked, range, "priceRange")
+                }
+              />
+            ))}
+          </div>
+          <div className="px-5 pt-5 pb-7">
+            <p className="font-medium text-gray-800 pb-2">Sort Options</p>
+            {sortOptions.map((option, index) => (
+              <RadioButton
+                key={index}
+                label={option}
+                selected={selectedSort === option}
+                onChange={() => handleSortChange(option)}
+              />
+            ))}
+          </div>
         </div>
-
       </div>
     </div>
   );
