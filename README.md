@@ -1,6 +1,6 @@
 # Hemi – Hotel Booking Site
 
-**Hemi** is a full-stack hotel booking platform built with **HTML, CSS, JavaScript**, and **Node.js/Express**, designed to simulate a real-world hotel reservation system. It provides an intuitive interface for users to browse hotels, check availability, and book rooms, while also demonstrating backend API integration and data handling.
+**Hemi** is a full-stack hotel booking platform built with **HTML, React.js, TailwindCSS, JavaScript**, and **Node.js/Express**, designed to simulate a real-world hotel reservation system. It provides an intuitive interface for users to browse hotels, check availability, and book rooms, while also demonstrating backend API integration and data handling.
 
 ---
 
