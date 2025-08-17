@@ -22,13 +22,13 @@
 ## 🖼 Screenshots & Demo
 
 ### 🔹 Homepage  
-![Homepage](screenshots/home.png)
+![Homepage](screenshots/Home.png)
 
-### 🔹 Hotel Listings  
-![Hotel Listings](screenshots/hotel-listings.png)
+### 🔹 All Rooms Page  
+![Hotel Listings](screenshots/Rooms.png)
 
 ### 🔹 Booking Page  
-![Booking Page](screenshots/booking.png) 
+![Booking Page](screenshots/Booking.png) 
 
 ---
 
