@@ -22,7 +22,7 @@
 ## 🖼 Screenshots & Demo
 
 ### 🔹 Homepage  
-![Homepage](screenshots/homepage.png)
+![Homepage](screenshots/home.png)
 
 ### 🔹 Hotel Listings  
 ![Hotel Listings](screenshots/hotel-listings.png)
